@@ -1,0 +1,12 @@
+[package]
+name = "updatesvc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+amqprs = { version = "1.6.1", features = ["traces"] }
+envy = "0.4.2"
+serde = { version = "1.0.202", features = ["derive"] }
+tokio = "1.37.0"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"

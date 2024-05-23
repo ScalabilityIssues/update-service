@@ -1,0 +1,7 @@
+{
+    "terminal.integrated.env.linux": {
+        "RABBITMQ_USERNAME": "guest",
+        "RABBITMQ_PASSWORD": "guest",
+        "RABBITMQ_HOST": "localhost",
+    }
+}
