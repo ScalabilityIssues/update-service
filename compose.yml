@@ -30,16 +30,6 @@ services:
     environment:
       POSTGRES_PASSWORD: pwd
 
-  salesvc:
-    image: ghcr.io/scalabilityissues/sale-service:main
-    pull_policy: always
-    restart: unless-stopped
-    environment:
-      TOKEN_SECRET: "secret"
-      FAKE_PRICE: "true"
-    ports:
-      - 60052:50051
-
   ticketsvc:
     image: ghcr.io/scalabilityissues/ticket-service:master
     pull_policy: always
@@ -66,9 +56,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     environment:
-      - SIGNING_KEY=/run/secrets/validation_key
-    secrets:
-      - validation_key
+      - GENERATE_SIGNING_KEY=true
     ports:
       - 60054:50051
 
@@ -86,10 +74,6 @@ services:
     ports:
       - "8025:8025"
       - "1025:1025"
-
-secrets:
-  validation_key:
-    file: sign.pem
 
 volumes:
   flightmngr-pgdata:
