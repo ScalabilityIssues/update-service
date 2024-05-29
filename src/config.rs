@@ -33,20 +33,24 @@ fn default_smtp_port() -> u16 {
     25
 }
 
-#[derive(Deserialize, Debug)]
-pub struct MailConfig {
-    #[serde(default = "default_smtp_host")]
-    pub smtp_host: String,
-    #[serde(default = "default_smtp_port")]
-    pub smtp_port: u16,
-}
-
 fn default_sender_name() -> String {
     "Simurgh Airlines".to_string()
 }
 
 fn default_sender_address() -> String {
     "update@simurghairlines.com".to_string()
+}
+
+#[derive(Deserialize, Debug)]
+pub struct MailConfig {
+    #[serde(default = "default_smtp_host")]
+    pub smtp_host: String,
+    #[serde(default = "default_smtp_port")]
+    pub smtp_port: u16,
+    #[serde(default = "default_sender_name")]
+    pub sender_name: String,
+    #[serde(default = "default_sender_address")]
+    pub sender_address: String,
 }
 
 fn default_flight_update_subject() -> String {
@@ -62,15 +66,11 @@ fn default_ticket_update_subject() -> String {
 }
 
 fn default_ticket_update_body() -> String {
-    "Hello, recently your ticket has been updated. Follow the link down here to retrieve you new ticket!\n".to_string()
+    "Hello, recently your ticket has been updated. Follow the link down here to retrieve you new ticket!".to_string()
 }
 
 #[derive(Deserialize, Debug)]
 pub struct MailContent {
-    #[serde(default = "default_sender_name")]
-    pub sender_name: String,
-    #[serde(default = "default_sender_address")]
-    pub sender_address: String,
     #[serde(default = "default_flight_update_subject")]
     pub flight_update_subject: String,
     #[serde(default = "default_flight_update_body")]

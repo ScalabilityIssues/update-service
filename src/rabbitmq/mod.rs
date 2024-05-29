@@ -4,22 +4,25 @@ mod tickets_consumer;
 use std::error::Error;
 
 use self::flights_consumer::FlightsConsumer;
-use crate::{config, dependencies::Dependencies, rabbitmq::tickets_consumer::TicketsConsumer};
+use crate::{
+    dependencies::Dependencies, email::EmailSender, rabbitmq::tickets_consumer::TicketsConsumer,
+};
 use amqprs::{
     callbacks::{DefaultChannelCallback, DefaultConnectionCallback},
     channel::{BasicConsumeArguments, Channel, QueueBindArguments, QueueDeclareArguments},
     connection::{Connection, OpenConnectionArguments},
 };
-use base64::Engine;
-use lettre::SmtpTransport;
-use lettre::{
-    message::header::{self},
-    Message, Transport,
-};
 
 pub struct Rabbit {
     connection: Connection,
     channel: Channel,
+}
+
+pub struct RabbitConfig {
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String,
 }
 
 pub enum UpdatesConsumer {
@@ -29,10 +32,7 @@ pub enum UpdatesConsumer {
 
 impl Rabbit {
     pub async fn new(
-        rabbitmq_host: &str,
-        rabbitmq_port: u16,
-        rabbitmq_user: &str,
-        rabbitmq_password: &str,
+        config: RabbitConfig,
         flights_exchange_name: String,
         flights_queue_name: String,
         tickets_exchange_name: String,
@@ -42,10 +42,10 @@ impl Rabbit {
         tracing::info!("opening connection...");
         // open a connection to RabbitMQ server
         let rabbitmq = Connection::open(&OpenConnectionArguments::new(
-            rabbitmq_host,
-            rabbitmq_port,
-            rabbitmq_user,
-            rabbitmq_password,
+            &config.host,
+            config.port,
+            &config.username,
+            &config.password,
         ))
         .await?;
 
@@ -105,77 +105,37 @@ async fn declare_bind_consume(
     clients: Dependencies,
     consumer_tag: &str,
 ) -> Result<(), Box<dyn Error>> {
-    tracing::info!("declaring queue {}...", &queue_name);
+    tracing::info!(queue_name, "declaring queue");
     // declare queue
     let (queue, _, _) = channel
         .queue_declare(QueueDeclareArguments::durable_client_named(&queue_name))
         .await?
         .unwrap();
 
-    tracing::info!(
-        "binding queue {} to exchange {}...",
-        &queue_name,
-        &exchange_name
-    );
+    tracing::info!(queue_name, exchange_name, "binding queue to exchange");
     // bind queue to exchange
     channel
         .queue_bind(QueueBindArguments::new(&queue, &exchange_name, ""))
         .await?;
 
-    tracing::info!("consuming messages from queue {}...", &queue_name);
+    tracing::info!(queue_name, "consuming messages");
     // consume messages from queue
     let args = BasicConsumeArguments::new(&queue, consumer_tag)
         .manual_ack(false)
         .finish();
 
+    let email_sender = EmailSender::new();
+
     match consumer {
         UpdatesConsumer::FlightsConsumer => channel
-            .basic_consume(FlightsConsumer::new(clients), args)
+            .basic_consume(FlightsConsumer::new(clients, email_sender), args)
             .await
             .unwrap(),
         UpdatesConsumer::TicketsConsumer => channel
-            .basic_consume(TicketsConsumer::new(clients), args)
+            .basic_consume(TicketsConsumer::new(clients, email_sender), args)
             .await
             .unwrap(),
     };
 
     Ok(())
-}
-
-// TODO: make it async
-pub async fn send_mail(
-    recipient_name: &str,
-    reicpient_address: &str,
-    url: &str,
-    qr: Vec<u8>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = envy::from_env::<config::MailContent>().unwrap();
-    let config = envy::from_env::<config::MailConfig>().unwrap();
-
-    // build qr code
-    // let qr = to_png_to_vec(
-    //     prost::Message::encode_to_vec(&qr),
-    //     QrCodeEcc::Medium,
-    //     1024,
-    // )?;
-    tracing::info!("Building email...");
-    let qr_img = base64::engine::general_purpose::STANDARD.encode(qr);
-    let email = Message::builder()
-        .from(format!("{} <{}>", content.sender_name, content.sender_address).parse()?)
-        .to(format!("{} <{}>", recipient_name, reicpient_address).parse()?)
-        .subject(content.flight_update_subject)
-        .header(header::ContentType::TEXT_HTML)
-        .body(format!("{} {} <img style=\"image-rendering: pixelated; height: auto; width: 25%;\"src=\"data:image/png;base64,{}\" />", content.flight_update_body, url, qr_img))?;
-
-    tracing::info!("Connecting to smtp server...");
-    let mailer = SmtpTransport::builder_dangerous(config.smtp_host)
-        .port(config.smtp_port)
-        .build();
-
-    // Send the email
-    tracing::info!("Sending email...");
-    match mailer.send(&email) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(Box::new(e)),
-    }
 }

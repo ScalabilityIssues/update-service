@@ -1,17 +1,25 @@
 [package]
+edition = "2021"
 name = "updatesvc"
 version = "0.1.0"
-edition = "2021"
 
 [dependencies]
 amqprs = { version = "1.6.1", features = ["traces"] }
 base64 = "0.22.1"
 envy = "0.4.2"
-lettre = { version = "0.11.7", default-features = false, features = ["builder", "hostname", "pool", "tokio1", "tracing", "smtp-transport"] }
+lettre = { version = "0.11.7", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tracing",
+] }
 lettre_email = "0.9.4"
 prost = "0.12.6"
 prost-types = "0.12.6"
 serde = { version = "1.0.202", features = ["derive"] }
+thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = [
     "macros",
     "net",
@@ -19,7 +27,6 @@ tokio = { version = "1.37.0", features = [
     "signal",
 ] }
 tonic = "0.11.0"
-tonic-reflection = "0.11.0"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 
