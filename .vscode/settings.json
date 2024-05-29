@@ -1,7 +1,14 @@
 {
+    "protoc": {
+        "options": [
+            "--proto_path=proto/",
+        ]
+    },
     "terminal.integrated.env.linux": {
         "RABBITMQ_USERNAME": "guest",
         "RABBITMQ_PASSWORD": "guest",
         "RABBITMQ_HOST": "localhost",
+        "SMTP_HOST": "localhost",
+        "SMTP_PORT": "1025",
     }
 }

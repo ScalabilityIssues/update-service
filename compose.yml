@@ -21,13 +21,6 @@ services:
       RABBITMQ_HOST: "rabbitmq"
     ports:
       - 60051:50051
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.flightmngr.rule=PathPrefix(`/flightmngr.`)
-      - traefik.http.routers.flightmngr.middlewares=grpcweb
-      - traefik.http.services.flightmngr.loadbalancer.server.port=50051
-      - traefik.http.services.flightmngr.loadbalancer.server.scheme=h2c
-      - traefik.http.middlewares.grpcweb.grpcweb.allowOrigins=*
 
   flightmngr-db:
     image: postgres:16-alpine
@@ -46,13 +39,6 @@ services:
       FAKE_PRICE: "true"
     ports:
       - 60052:50051
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.salesvc.rule=PathPrefix(`/salesvc.`)
-      - traefik.http.routers.salesvc.middlewares=grpcweb
-      - traefik.http.services.salesvc.loadbalancer.server.port=50051
-      - traefik.http.services.salesvc.loadbalancer.server.scheme=h2c
-      - traefik.http.middlewares.grpcweb.grpcweb.allowOrigins=*
 
   ticketsvc:
     image: ghcr.io/scalabilityissues/ticket-service:master
@@ -65,13 +51,6 @@ services:
       RABBITMQ_HOST: "rabbitmq"
     ports:
       - 60053:50051
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.ticketsvc.rule=PathPrefix(`/ticketsrvc.`)
-      - traefik.http.routers.ticketsvc.middlewares=grpcweb
-      - traefik.http.services.ticketsvc.loadbalancer.server.port=50051
-      - traefik.http.services.ticketsvc.loadbalancer.server.scheme=h2c
-      - traefik.http.middlewares.grpcweb.grpcweb.allowOrigins=*
 
   ticketsvc-db:
     image: mongo:7
@@ -92,13 +71,6 @@ services:
       - validation_key
     ports:
       - 60054:50051
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.validationsvc.rule=PathPrefix(`/validationsvc.`)
-      - traefik.http.routers.validationsvc.middlewares=grpcweb
-      - traefik.http.services.validationsvc.loadbalancer.server.port=50051
-      - traefik.http.services.validationsvc.loadbalancer.server.scheme=h2c
-      - traefik.http.middlewares.grpcweb.grpcweb.allowOrigins=*
 
   server:
     build: .
@@ -107,6 +79,13 @@ services:
       RABBITMQ_HOST: "rabbitmq"
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SMTP_PORT: "1025"
+
+  mailsvc:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
 secrets:
   validation_key:

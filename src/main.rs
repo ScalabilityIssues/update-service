@@ -1,9 +1,9 @@
 use tokio::sync::Notify;
-use tracing::info;
 
-use crate::rabbitmq::Rabbit;
-
+use crate::{dependencies::Dependencies, rabbitmq::Rabbit};
 mod config;
+mod dependencies;
+mod proto;
 mod rabbitmq;
 
 #[tokio::main]
@@ -12,6 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let opt = envy::from_env::<config::Options>()?;
 
+    let clients = Dependencies::new(&opt.ticketsrvc_url, &opt.validationsvc_url)?;
     tracing::info!("connecting to rabbitmq broker, creating queues and binding them to broker...");
     let r = Rabbit::new(
         &opt.rabbitmq_host,
@@ -22,6 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "flight-queue".to_string(),
         "ticket-update".to_string(),
         "ticket-queue".to_string(),
+        clients,
     )
     .await?;
 
