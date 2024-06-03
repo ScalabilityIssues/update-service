@@ -5,7 +5,8 @@ use std::error::Error;
 
 use self::flights_consumer::FlightsConsumer;
 use crate::{
-    dependencies::Dependencies, email::EmailSender, rabbitmq::tickets_consumer::TicketsConsumer,
+    config, dependencies::Dependencies, email::EmailSender,
+    rabbitmq::tickets_consumer::TicketsConsumer,
 };
 use amqprs::{
     callbacks::{DefaultChannelCallback, DefaultConnectionCallback},
@@ -131,11 +132,25 @@ async fn declare_bind_consume(
 
     match consumer {
         UpdatesConsumer::FlightsConsumer => channel
-            .basic_consume(FlightsConsumer::new(clients, email_sender), args)
+            .basic_consume(
+                FlightsConsumer::new(
+                    clients,
+                    email_sender,
+                    envy::from_env::<config::MailContent>()?,
+                ),
+                args,
+            )
             .await
             .unwrap(),
         UpdatesConsumer::TicketsConsumer => channel
-            .basic_consume(TicketsConsumer::new(clients, email_sender), args)
+            .basic_consume(
+                TicketsConsumer::new(
+                    clients,
+                    email_sender,
+                    envy::from_env::<config::MailContent>()?,
+                ),
+                args,
+            )
             .await
             .unwrap(),
     };

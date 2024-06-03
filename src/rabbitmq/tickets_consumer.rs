@@ -3,6 +3,7 @@ use prost::Message;
 use tonic::async_trait;
 use tracing::instrument;
 
+use crate::config::MailContent;
 use crate::dependencies::Dependencies;
 use crate::email::EmailSender;
 use crate::proto::ticketsrvc::Ticket;
@@ -10,13 +11,15 @@ use crate::proto::ticketsrvc::Ticket;
 pub struct TicketsConsumer {
     client: Dependencies,
     email_sender: EmailSender,
+    mail_content: MailContent,
 }
 
 impl TicketsConsumer {
-    pub fn new(client: Dependencies, email_sender: EmailSender) -> Self {
+    pub fn new(client: Dependencies, email_sender: EmailSender, mail_content: MailContent) -> Self {
         Self {
             client,
             email_sender,
+            mail_content,
         }
     }
 }
@@ -52,6 +55,8 @@ impl AsyncConsumer for TicketsConsumer {
             .send_email(
                 passenger.name.as_str(),
                 passenger.email.as_str(),
+                self.mail_content.ticket_update_subject.as_str(),
+                self.mail_content.ticket_update_body.as_str(),
                 &ticket.url,
                 qr,
             )

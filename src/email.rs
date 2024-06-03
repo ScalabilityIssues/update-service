@@ -10,13 +10,11 @@ use crate::config;
 pub struct EmailSender {
     mailer: AsyncSmtpTransport<Tokio1Executor>,
     sender_mailbox: Mailbox,
-    content: config::MailContent,
 }
 
 impl EmailSender {
     pub fn new() -> Self {
         let config = envy::from_env::<config::MailConfig>().unwrap();
-        let content = envy::from_env::<config::MailContent>().unwrap();
 
         let mailer = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(config.smtp_host)
             .port(config.smtp_port)
@@ -30,7 +28,6 @@ impl EmailSender {
         Self {
             mailer,
             sender_mailbox,
-            content,
         }
     }
 
@@ -38,6 +35,8 @@ impl EmailSender {
         &self,
         recipient_name: &str,
         recipient_address: &str,
+        subject: &str,
+        reason: &str,
         ticket_url: &str,
         qr: Vec<u8>,
     ) -> Result<(), SendEmailError> {
@@ -47,9 +46,9 @@ impl EmailSender {
         let email_message = Message::builder()
             .from(self.sender_mailbox.clone())
             .to(recipient_mailbox)
-            .subject(&self.content.flight_update_subject)
+            .subject(subject)
             .header(header::ContentType::TEXT_HTML)
-            .body(self.render_body(ticket_url, &qr))?;
+            .body(self.render_body(reason, ticket_url, &qr))?;
 
         // Send the email
         self.mailer.send(email_message).await?;
@@ -57,10 +56,10 @@ impl EmailSender {
         Ok(())
     }
 
-    fn render_body(&self, url: &str, qr: &str) -> String {
+    fn render_body(&self, reason: &str, url: &str, qr: &str) -> String {
         format!(
             include_str!("email_template.html"),
-            body = self.content.flight_update_body.replace("\n", "<br/>"),
+            body = reason.replace("\n", "<br/>"),
             url = url,
             qr = qr
         )
