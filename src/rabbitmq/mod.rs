@@ -12,6 +12,7 @@ use amqprs::{
     channel::{BasicConsumeArguments, Channel, QueueBindArguments, QueueDeclareArguments},
     connection::{Connection, OpenConnectionArguments},
 };
+use backon::{ExponentialBuilder, Retryable};
 
 pub struct Rabbit {
     connection: Connection,
@@ -40,14 +41,16 @@ impl Rabbit {
         clients: Dependencies,
     ) -> Result<Self, Box<dyn Error>> {
         tracing::info!("opening connection...");
-        // open a connection to RabbitMQ server
-        let rabbitmq = Connection::open(&OpenConnectionArguments::new(
+        let connection_arguments = OpenConnectionArguments::new(
             &config.host,
             config.port,
             &config.username,
             &config.password,
-        ))
-        .await?;
+        );
+
+        let rabbitmq = (|| async { Connection::open(&connection_arguments).await })
+            .retry(&ExponentialBuilder::default().with_max_times(10))
+            .await?;
 
         tracing::info!("registering callback...");
         // Register connection level callbacks.

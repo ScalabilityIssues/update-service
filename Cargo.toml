@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [dependencies]
 amqprs = { version = "1.6.1", features = ["traces"] }
+backon = "0.4.4"
 base64 = "0.22.1"
 envy = "0.4.2"
 lettre = { version = "0.11.7", default-features = false, features = [
