@@ -51,6 +51,8 @@ pub struct MailConfig {
     pub sender_name: String,
     #[serde(default = "default_sender_address")]
     pub sender_address: String,
+
+    pub frontend_ticket_url_prefix: String,
 }
 
 fn default_flight_update_subject() -> String {

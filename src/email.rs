@@ -10,6 +10,7 @@ use crate::config;
 pub struct EmailSender {
     mailer: AsyncSmtpTransport<Tokio1Executor>,
     sender_mailbox: Mailbox,
+    url_prefix: String,
 }
 
 impl EmailSender {
@@ -28,6 +29,7 @@ impl EmailSender {
         Self {
             mailer,
             sender_mailbox,
+            url_prefix: config.frontend_ticket_url_prefix,
         }
     }
 
@@ -60,6 +62,7 @@ impl EmailSender {
         format!(
             include_str!("email_template.html"),
             body = reason.replace("\n", "<br/>"),
+            url_prefix = self.url_prefix,
             url = url,
             qr = qr
         )
